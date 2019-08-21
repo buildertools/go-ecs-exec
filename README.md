@@ -16,7 +16,18 @@ ecs-exec \
   cat /run/secrets/testvar
 ```
 
-The pairs are specified in the form `ENVVAR=FILEPATH`. The list of pairs is space delimited and terminated by a `--` token. Everything after the `--` token will be executed using the `execve(2)` system call. The environment variables that are written to files are unset in the environment (for safety).
+The pairs are specified in the form `ENVVAR=FILEPATH`. The list of pairs is space delimited and terminated by a `--` token. Everything after the `--` token will be executed using the `execve(2)` system call. 
+
+The environment variables that are written to files are unset in the environment (for safety). Note that in the following example your secret will not be included in the environment for the process:
+
+```shell
+NOT_SECRET=myEnemysPassword \
+SOME_SECRET=myPassword \
+ecs-exec \
+  SOME_SECRET=/run/secrets/some_secret \
+  -- \
+  env
+```
 
 ## Licensing
 
