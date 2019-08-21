@@ -29,6 +29,18 @@ ecs-exec \
   env
 ```
 
+### Base64 Encoded Values
+
+If you're trying to pack a bunch of crap into environment variables because systems like ECS don't support writing files into your environment then you might want to base64 encode those larger or structured values and stuff them into an environment variable. In that case `ecs-exec` can automatically decode those values prior to writing them to files. Simply add a `b64,` prefix to the filename:
+
+```shell
+MY_CONFIG=eyJ1c2VybmFtZSI6ImF3c2Zvb2wiLCJzZWNyZXRfa2V5Ijoic3VwZXJzZWNyZXRnYXJiYWdlIn0K \
+ecs-exec \
+  MY_CONFIG=b64,/run/secrets/creds \
+  -- \
+  cat /run/secrets/creds
+```
+
 ## Licensing
 
 See the [LICENSE](LICENSE) file.
