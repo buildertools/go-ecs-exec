@@ -70,6 +70,12 @@ func ValidateAndCapture() ([]SecretPair, []string, error) {
 }
 
 func Pipe(i, o string) error {
+	envVarValue := os.Getenv(i)
+	if len(envVarValue) <= 0 {
+		os.Stderr.Write([]byte("skipping " + i + " variable is unset\n"))
+		return nil
+	}
+
 	os.MkdirAll(filepath.Dir(o), 0777)
 
 	f, err := os.OpenFile(o, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0644)
@@ -77,11 +83,6 @@ func Pipe(i, o string) error {
 		return err
 	}
 	defer f.Close()
-
-	envVarValue := os.Getenv(i)
-	if len(envVarValue) <= 0 {
-		return errors.New("Input variable: " + i + " is unset: " + envVarValue)
-	}
 
 	n, err := f.Write([]byte(envVarValue))
 	if err == nil && n < len(envVarValue) {
