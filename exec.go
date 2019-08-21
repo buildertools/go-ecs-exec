@@ -37,6 +37,9 @@ func main() {
 			return
 		}
 	}
+	for _, p := range pairs {
+		os.Unsetenv(p.EnvVarName)
+	}
 	Exec(command[0], command[0:])
 }
 
