@@ -14,6 +14,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"errors"
 	"os"
 	"os/exec"
@@ -29,8 +30,25 @@ func main() {
 		os.Exit(1)
 		return
 	}
+
+	re := regexp.MustCompile(`b64,(.+)`)
 	for _, p := range pairs {
-		err = Pipe(p.EnvVarName, p.FileName)
+		parts := re.FindSubmatch([]byte(p.FileName))
+
+		var contents []byte
+		if len(parts) != 0 {
+			contents = ContentsB64(p.EnvVarName)
+			p.FileName = string(parts[1])
+		} else {
+			contents = ContentsPlain(p.EnvVarName)
+		}
+
+		if len(contents) <= 0 {
+			os.Stderr.Write([]byte("skipping " + p.EnvVarName + " variable is unset\n"))
+			continue
+		}
+
+		err = Pipe(contents, p.FileName)
 		if err != nil {
 			os.Stderr.Write([]byte(err.Error() + "\n"))
 			os.Exit(2)
@@ -69,13 +87,27 @@ func ValidateAndCapture() ([]SecretPair, []string, error) {
 	return pairs, rest, nil
 }
 
-func Pipe(i, o string) error {
+func ContentsPlain(i string) []byte {
 	envVarValue := os.Getenv(i)
 	if len(envVarValue) <= 0 {
-		os.Stderr.Write([]byte("skipping " + i + " variable is unset\n"))
-		return nil
+		return []byte{}
 	}
+	return []byte(envVarValue)
+}
 
+func ContentsB64(i string) []byte {
+	envVarValue := os.Getenv(i)
+	if len(envVarValue) <= 0 {
+		return []byte{}
+	}
+	out, err := base64.StdEncoding.DecodeString(envVarValue)
+	if err != nil {
+		return []byte{}
+	}
+	return out
+}
+
+func Pipe(i []byte, o string) error {
 	os.MkdirAll(filepath.Dir(o), 0777)
 
 	f, err := os.OpenFile(o, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0644)
@@ -84,8 +116,8 @@ func Pipe(i, o string) error {
 	}
 	defer f.Close()
 
-	n, err := f.Write([]byte(envVarValue))
-	if err == nil && n < len(envVarValue) {
+	n, err := f.Write(i)
+	if err == nil && n < len(i) {
 		return errors.New("unable to write complete value to file")
 	}
 	if err != nil {
