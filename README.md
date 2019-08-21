@@ -13,10 +13,10 @@ ecs-exec \
   TESTVAR=/run/secrets/testvar \
   SECOND_VAR=/run/secrets/secondvar \
   -- \
-  echo "hello, world!"
+  cat /run/secrets/testvar
 ```
 
-The pairs are specified in the form `ENVVAR=FILEPATH`. The list of pairs is space delimited and terminated by a `--` token. Everything after the `--` token will be executed using the `execve(2)` system call.
+The pairs are specified in the form `ENVVAR=FILEPATH`. The list of pairs is space delimited and terminated by a `--` token. Everything after the `--` token will be executed using the `execve(2)` system call. The environment variables that are written to files are unset in the environment (for safety).
 
 ## Licensing
 
